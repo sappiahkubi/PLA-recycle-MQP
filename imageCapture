@@ -1,0 +1,64 @@
+# plaMeasure - By: Sam - Tue Mar 26 2024
+
+import pyb, time, sensor, os
+rtc = pyb.RTC()
+
+
+# folder where taken images will be saved
+folderPath = "samples"
+
+# clear folder before adding new images
+os.sync()
+for fileName in os.listdir(folderPath):
+    filePath = folderPath + "/" + fileName
+    print(filePath)
+    try:
+        os.remove(filePath)
+        print("Deleted: ", filePath)
+    except OSError as e:
+        print("ERROR DELETING FILE: ", e)
+
+# initialize camera #
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565) # may also want grayscale: RGB565, or JPEG
+sensor.set_framesize(sensor.WQXGA2)
+#sensor.set_framesize(sensor.QQVGA)
+
+sensor.skip_frames(time = 1000) # allow changes to apply
+sensor.set_auto_gain(False) # turned off for color tracking
+sensor.set_auto_whitebal(False) # turned off for color tracking
+clock = time.clock() # Tracks FPS
+##########
+
+while (True):
+    # start clock
+    clock.tick()
+
+    # capture an image
+    img = sensor.snapshot()
+
+    # get date and time from RTC (Real Time Counter)
+    dateTime = rtc.datetime()
+    year = str(dateTime[0])
+    month = '%02d' % dateTime[1]
+    day = '%02d' % dateTime[2]
+    hour = '%02d' % dateTime[4]
+    minute = '%02d' % dateTime[5]
+    second = '%02d' % dateTime[6]
+#    subSecond = str(dateTime[7])
+
+    # add timestamp to image filename
+    fileName = ("pic" + year + month
+        + day + hour + minute + second)
+
+    # save the image
+    img.save(folderPath + "/" + (str)(fileName) + ".jpg", quality=100)
+
+    # flash led when image is taken
+    pyb.LED(1).on()
+
+    print(os.listdir("samples"))
+
+    # pause capture while taking image (1.2 secs)
+    sensor.skip_frames(time = 1200)
+    pyb.LED(1).off()
