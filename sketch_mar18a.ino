@@ -20,11 +20,11 @@ const int tempSensor = 37;
 int previousMillis = 0;
 float lastTemp1 = 0;
 float lastTemp2 = 0;
-const float desiredTemp = 65; // these may need to be adjusted
+const float desiredTemp = 65; // These may need to be adjusted
 const float minTemp = 60;
 const float maxTemp = 70;
 
-const float L = 0.00175; // Curent thickness of PLA
+const float L = 0.00175; // Current thickness of PLA
 const float k = 0.111; // May need to be adjusted
 
 void setup() {
@@ -43,7 +43,7 @@ void setup() {
   sensor2.setEmissivityCorrectionCoefficient(1.0);
   sensor1.setMeasuredParameters(sensor1.eIIR100, sensor1.eFIR1024);
   sensor2.setMeasuredParameters(sensor2.eIIR100, sensor2.eFIR1024);
-  sensor1.enterSleepMode(); // needs to be done so that the sensors work correctly
+  sensor1.enterSleepMode(); // Needs to be done so that the temperature sensors work correctly
   delay(50);
   sensor1.enterSleepMode(false);
   delay(200);
@@ -60,7 +60,7 @@ void setup() {
 
 void loop() {
   Serial.println(millis());
-  if(millis() - previousMillis >= 10000){ //adjusts fan speed every 10 seconds
+  if(millis() - previousMillis >= 10000){ // Only adjusts fan speed every 10 seconds unless the PLA is too cold or hot
     previousMillis = millis();
     if(fanSpeed < 0){
       fanSpeed = 0;
@@ -90,7 +90,7 @@ void loop() {
     float check2 = ((objectTemp2 + lastTemp2)/2.0)*100.0;
     Serial.println(check1);
     Serial.println(check2);
-    if(check1 >= 5){ // Only adjusts the fan speed if the temperature difference is larger than 5 percent
+    if(check1 >= 5){ // Only adjusts the fan speed if the entering temperature difference is larger than 5 percent
       float ambientTemp = (ambientTemp1 + ambientTemp2 + temp)/3;
       Serial.println(ambientTemp);
       float A = L * 0.04;
@@ -120,7 +120,7 @@ void loop() {
       }
       lastTemp1 = objectTemp1;
       lastTemp2 = objectTemp2;
-    }else if (check2 >= 5){
+    }else if (check2 >= 5){ // Still adjusts the fan speed if the exiting temperature difference is larger than 5 percent
       if(objectTemp2 - desiredTemp < 0){
         int tempSpeed = fanSpeed - 10;
         if(tempSpeed < 50){
@@ -144,7 +144,7 @@ void loop() {
         lastTemp2 = objectTemp2;
       }
     }
-  }else{
+  }else{ // Adjusts the speed of the fan if the exiting temperature gets too cold or hot when not in the periodic 10 second checker
     float objectTemp2 = sensor2.getObjectTempCelsius();
     //objectTemp2 = 62; //testing
     if(objectTemp2 <= minTemp){
