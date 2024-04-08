@@ -157,9 +157,9 @@ void loop() {
       analogWrite(fan1, fanSpeed);
       analogWrite(fan2, fanSpeed);
     }
-  }else{
-    float objectTemp1 = sensor1.getObjectTempCelsius();
-    if(objectTemp1 >= minTemp){
+  }else{ // Blows the fans at full speed until the second temperature sensor reads a value above the minimum temperature variable.
+    float objectTemp2 = sensor2.getObjectTempCelsius();
+    if(objectTemp2 >= minTemp){
       initalSetup = false;
     }
   }
