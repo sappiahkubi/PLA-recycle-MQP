@@ -23,6 +23,7 @@ float lastTemp2 = 0;
 const float desiredTemp = 65; // These may need to be adjusted
 const float minTemp = 60;
 const float maxTemp = 70;
+bool initalSetup = true;
 
 const float L = 0.00175; // Current thickness of PLA
 const float k = 0.111; // May need to be adjusted
@@ -60,7 +61,7 @@ void setup() {
 
 void loop() {
   Serial.println(millis());
-  if(millis() - previousMillis >= 10000){ // Only adjusts fan speed every 10 seconds unless the PLA is too cold or hot
+  if(millis() - previousMillis >= 10000 && initalSetup == false){ // Only adjusts fan speed every 10 seconds unless the PLA is too cold or hot
     previousMillis = millis();
     if(fanSpeed < 0){
       fanSpeed = 0;
@@ -144,7 +145,7 @@ void loop() {
         lastTemp2 = objectTemp2;
       }
     }
-  }else{ // Adjusts the speed of the fan if the exiting temperature gets too cold or hot when not in the periodic 10 second checker
+  }else if(initalSetup == false){ // Adjusts the speed of the fan if the exiting temperature gets too cold or hot when not in the periodic 10 second checker
     float objectTemp2 = sensor2.getObjectTempCelsius();
     //objectTemp2 = 62; //testing
     if(objectTemp2 <= minTemp){
@@ -155,6 +156,11 @@ void loop() {
       fanSpeed = 255;
       analogWrite(fan1, fanSpeed);
       analogWrite(fan2, fanSpeed);
+    }
+  }else{
+    float objectTemp1 = sensor1.getObjectTempCelsius();
+    if(objectTemp1 >= minTemp){
+      initalSetup = false;
     }
   }
   delay(1000);
