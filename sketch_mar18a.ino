@@ -10,8 +10,8 @@ DFRobot_MLX90614_I2C sensor2(MLX90614_I2C_ADDR2, &Wire);   // instantiate an obj
 
 DHT dht(DHTPIN, DHTTYPE);
 
-const int fan1 = 9; // fan1 pin
-const int fan2 = 8;// fan2 pin
+const int fan1 = 12; // fan1 pin
+const int fan2 = 11;// fan2 pin
 int fanSpeed = 255;
 const int fanBuffer = 200;
 int buffer = 200;
@@ -57,6 +57,12 @@ void setup() {
   pinMode(fan2, OUTPUT);
   analogWrite(fan1, fanSpeed);
   analogWrite(fan2, fanSpeed);
+  pinMode(7,OUTPUT); //enable, ENA
+  pinMode(9,OUTPUT); //pulse, PUL
+  pinMode(8,OUTPUT); //direction, DIR, used to be pin 8
+  digitalWrite(7,HIGH); //set to ENABLE
+  digitalWrite(8,LOW); //Set direction to be the opposite way
+  delayMicroseconds(2000);
 }
 
 void loop() {
@@ -163,5 +169,10 @@ void loop() {
       initalSetup = false;
     }
   }
+  delayMicroseconds(500); // Moves the motor every loop reguardless of temperature readings
+  digitalWrite(9,HIGH); //pulse (move) the motor
+  delayMicroseconds(500); //wait (pause) for 500 microseconds
+  digitalWrite(9,LOW); //stop the motor
+  delayMicroseconds(500); //wait (pause) for 500 microseconds
   delay(1000);
 }
