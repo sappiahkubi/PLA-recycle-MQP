@@ -1,64 +1,78 @@
-# plaMeasure - By: Sam - Tue Mar 26 2024
+# PLA Diameter Output Measurment by Samuel Appiah Kubi (24/17/04)
+# Reference: https://forums.openmv.io/t/how-can-i-find-minimum-area-rectangle-in-binary-image/1033/18
 
-import pyb, time, sensor, os
-rtc = pyb.RTC()
+import sensor, image, time, math
+import pyb
+from pyb import UART
 
+threshold_index = 1 # 0 for lighter colors, 1 for darker, 2 for red, 3 for green, 4 for blue
 
-# folder where taken images will be saved
-folderPath = "samples"
+# Color Tracking Thresholds (L Min, L Max, A Min, A Max, B Min, B Max)
+# The below thresholds track in general red/green/blue things. You may wish to tune them...
+thresholds = [(120, 255),#(90,  255),                                   #calibrated lighterPLA thresholds
+              (100, 255), # darker pla (NOT BLACK THO)
+              (30,  100,    15,     127,    15,     127),   # generic_red_thresholds
+              (30,  100,    -64,    -8,     -32,    32),    # generic_green_thresholds
+              (0,   30,     0,      64,     -128,   0)]     # generic_blue_thresholds
 
-# clear folder before adding new images
-os.sync()
-for fileName in os.listdir(folderPath):
-    filePath = folderPath + "/" + fileName
-    print(filePath)
-    try:
-        os.remove(filePath)
-        print("Deleted: ", filePath)
-    except OSError as e:
-        print("ERROR DELETING FILE: ", e)
-
-# initialize camera #
 sensor.reset()
-sensor.set_pixformat(sensor.RGB565) # may also want grayscale: RGB565, or JPEG
-sensor.set_framesize(sensor.WQXGA2)
-#sensor.set_framesize(sensor.QQVGA)
+sensor.set_pixformat(sensor.GRAYSCALE) #RGB565 or GRAYSCALE)
+sensor.set_framesize(sensor.WQXGA2)  # WQXGA2 or sensor.QVGA (or others)
+sensor.set_windowing((500, 500))
+sensor.skip_frames(time = 2000)
+sensor.set_gainceiling(8)
+sensor.set_auto_gain(False) # must be turned off for color tracking
+sensor.set_auto_whitebal(False) # must be turned off for color tracking
+clock = time.clock()
 
-sensor.skip_frames(time = 1000) # allow changes to apply
-sensor.set_auto_gain(False) # turned off for color tracking
-sensor.set_auto_whitebal(False) # turned off for color tracking
-clock = time.clock() # Tracks FPS
-##########
+# define LEDs
+red_led = pyb.LED(1)
+green_led = pyb.LED(2)
+blue_led = pyb.LED(3)
+ir_leds = pyb.LED(4)
 
-while (True):
-    # start clock
+# UART 3, and baudrate.
+uart = UART(3, 9600, timeout_char=200)
+
+# Only blobs that with more pixels than "pixel_threshold" and more area than "area_threshold" are
+# returned by "find_blobs" below. Change "pixels_threshold" and "area_threshold" if you change the
+# camera resolution. "merge=True" merges all overlapping blobs in the image.
+def findDrawBlobs():
+    for blob in img.find_blobs([thresholds[threshold_index]], pixels_threshold=8000, area_threshold=7000): #, merge=True):
+        img.draw_line(blob.min_corners()[0][0], blob.min_corners()[0][1], blob.min_corners()[1][0], blob.min_corners()[1][1], color=(48, 25, 52), thickness = 2)
+        img.draw_line(blob.min_corners()[1][0], blob.min_corners()[1][1], blob.min_corners()[2][0], blob.min_corners()[2][1], color=(48, 25, 52), thickness = 2)
+        img.draw_line(blob.min_corners()[2][0], blob.min_corners()[2][1], blob.min_corners()[3][0], blob.min_corners()[3][1], color=(48, 25, 52), thickness = 2)
+        img.draw_line(blob.min_corners()[3][0], blob.min_corners()[3][1], blob.min_corners()[0][0], blob.min_corners()[0][1], color=(48, 25, 52), thickness = 2)
+
+        xVals = ( blob.min_corners()[0][0], blob.min_corners()[1][0], blob.min_corners()[2][0], blob.min_corners()[3][0] )
+        yVals = ( blob.min_corners()[0][1], blob.min_corners()[1][1], blob.min_corners()[2][1], blob.min_corners()[3][1] )
+
+        blobWidth = ( abs( yVals[3]-yVals[0] ) + abs( yVals[1] - yVals[2] ) ) / 2
+
+        textBlob = "blobWidth: " + str(blobWidth) + " pxls"
+        img.draw_string(blob.min_corners()[0][0] + 30, blob.min_corners()[0][1] + 15, textBlob, color = (48, 25, 52), scale = 1.4)
+        print(blob.corners(), "", blob.min_corners())
+        print(blobWidth)
+
+        irlCamY = 8.33 # mm
+        x = 8.466666666666665
+
+        width = (irlCamY / 300) * blobWidth #  Frame Width
+
+        realWidth = "Real Width: " + str(width) + " mm"
+        img.draw_string(blob.min_corners()[0][0] + 30, blob.min_corners()[3][1] - 15, realWidth, color = (50, 10, 30), scale = 1.5)
+        print(blobWidth)
+
+        uart.write(realWidth)# sends recorded pla diameter to arduino via serial
+        time.sleep_ms(100)
+
+
+while(True):
     clock.tick()
-
-    # capture an image
     img = sensor.snapshot()
-
-    # get date and time from RTC (Real Time Counter)
-    dateTime = rtc.datetime()
-    year = str(dateTime[0])
-    month = '%02d' % dateTime[1]
-    day = '%02d' % dateTime[2]
-    hour = '%02d' % dateTime[4]
-    minute = '%02d' % dateTime[5]
-    second = '%02d' % dateTime[6]
-#    subSecond = str(dateTime[7])
-
-    # add timestamp to image filename
-    fileName = ("pic" + year + month
-        + day + hour + minute + second)
-
-    # save the image
-    img.save(folderPath + "/" + (str)(fileName) + ".jpg", quality=100)
-
-    # flash led when image is taken
-    pyb.LED(1).on()
-
-    print(os.listdir("samples"))
-
-    # pause capture while taking image (1.2 secs)
-    sensor.skip_frames(time = 1200)
-    pyb.LED(1).off()
+    img = img.rotation_corr(0,0,-90)
+    ## turns on LED, makes WHITE
+    red_led.on()
+    green_led.on()
+    blue_led.on()
+    findDrawBlobs()
