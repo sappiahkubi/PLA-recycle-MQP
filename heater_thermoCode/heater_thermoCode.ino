@@ -1,11 +1,12 @@
 //////////////////////////////////////////////////////////////////
+//References:
 //https://adam-meyer.com/arduino/N-Channel_MOSFET
 //Simple code to output a PWM sine wave signal on pin 9
 //
 //https://learn.adafruit.com/thermistor/using-a-thermistor
 //////////////////////////////////////////////////////////////////
 
-#include "Wire.h"
+// #include "Wire.h"
 
 #define fadePin 3
 // which analog pin to connect
@@ -67,7 +68,7 @@ float val2Res(float value) {
 void setup() {
   Serial.begin(9600);
 
-  Wire.begin();
+  // Wire.begin();
 
   // analogReference(EXTERNAL);
   // pinMode(7, OUTPUT);
@@ -76,6 +77,8 @@ void setup() {
 }
 
 void loop() {
+
+  Serial.flush();
 
   temp1 = val2Res(getAverage(THERMISTORPIN1));
   temp2 = val2Res(getAverage(THERMISTORPIN2));
@@ -91,6 +94,8 @@ void loop() {
 
     delay(15);
 
+    analogWrite(fadePin, 0);
+
     Serial.print("Peak Temp Reached: ");
     Serial.print("Temp1:");
     Serial.print(temp1);
@@ -101,7 +106,7 @@ void loop() {
     Serial.print("Average_temp(C):");
     Serial.println((temp1+temp2)/2);
 
-  } else {
+  } else if(avgTemp <= 130.0){
     heatVoltCap = heatVoltCap + 2;
 
     Serial.print("Temp1:");
@@ -124,13 +129,23 @@ void loop() {
       analogWrite(fadePin, sinOut);
     //////////////////////////////
   
+  }else{
+    analogWrite(fadePin, 0);
   }
 
   // Data Transfer to Master Arduino
-  byte data[] = {avgTemp};
-  Wire.beginTransmission(1); // transmit to device #1
-  Wire.write(data, sizeof(data));        // sends five bytes
-  Wire.endTransmission();    // stop transmitting
-  delay(500);
+  // char text[5] = "hi"; //String(avgTemp);
+  // char text = avgTemp;
+
+  // delay(500);
+  // if (Serial.availableForWrite()){
+  //   Serial.write(8);
+  //   Serial.write(text);
+  // }
+  // byte data[] = {avgTemp};
+  // Wire.beginTransmission(5); // transmit to device #5 (pin A5)
+  // Wire.write(data, sizeof(data));        // sends five bytes
+  // Wire.endTransmission();    // stop transmitting
+  delay(1000);
   ///
 }
