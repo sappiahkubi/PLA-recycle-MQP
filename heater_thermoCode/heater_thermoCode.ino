@@ -1,14 +1,10 @@
 //////////////////////////////////////////////////////////////////
-//References:
-//https://adam-meyer.com/arduino/N-Channel_MOSFET
-//Simple code to output a PWM sine wave signal on pin 9
 //
 //https://learn.adafruit.com/thermistor/using-a-thermistor
 //////////////////////////////////////////////////////////////////
 
-// #include "Wire.h"
-
-#define fadePin 3
+// Heater Switch Pin
+#define HEATPIN 3
 // which analog pin to connect
 #define THERMISTORPIN1 A0
 #define THERMISTORPIN2 A2
@@ -66,14 +62,8 @@ float val2Res(float value) {
 }
 
 void setup() {
-  Serial.begin(9600);
-
-  // Wire.begin();
-
-  // analogReference(EXTERNAL);
-  // pinMode(7, OUTPUT);
-  pinMode(fadePin, OUTPUT);
-
+  Serial.begin(115200);
+  pinMode(HEATPIN, OUTPUT);
 }
 
 void loop() {
@@ -84,68 +74,54 @@ void loop() {
   temp2 = val2Res(getAverage(THERMISTORPIN2));
   float avgTemp = (temp1 + temp2) / 2;
 
-  if (avgTemp >= 140.0){
-
-    // Serial.print("Temp1: ");
-    // Serial.print(temp1);
-    // Serial.print(" , ");
-    // Serial.println(i - 350);
-    // digitalWrite(7,  HIGH);
+  if (avgTemp >= 139.0){
 
     delay(15);
 
-    analogWrite(fadePin, 0);
+    heatVoltCap = 0;
+    // Serial.println("HEAT OFF, LOW");
+    analogWrite(HEATPIN, LOW);  // turn off
 
-    Serial.print("Peak Temp Reached: ");
-    Serial.print("Temp1:");
-    Serial.print(temp1);
-    Serial.print(" , ");
-    Serial.print("Temp2:");
-    Serial.print(temp2);
-    Serial.print(" , ");
-    Serial.print("Average_temp(C):");
-    Serial.println((temp1+temp2)/2);
+    // if(Serial.availableForWrite()){
+      Serial.print("Peak Temp Reached: ");
+      Serial.print("Temp1:");
+      Serial.print(temp1);
+      Serial.print(" , ");
+      Serial.print("Temp2:");
+      Serial.print(temp2);
+      Serial.print(" , ");
+      Serial.print("Average_temp(C):");
+      Serial.println((temp1+temp2)/2);
+      // Serial.println(analogRead(HEATPIN));
 
-  } else if(avgTemp <= 130.0){
-    heatVoltCap = heatVoltCap + 2;
+    // }
 
-    Serial.print("Temp1:");
-    Serial.print(temp1);
-    Serial.print(" , ");
-    Serial.print("Temp2:");
-    Serial.print(temp2);
-    Serial.print(" , ");
-    Serial.print("Average_temp(C):");
-    Serial.println((temp1+temp2)/2);
-
-    
-
-    // Turn on Cartridge Heater //  
-      float rad = DEG_TO_RAD * heatVoltCap; //convert 0-360 angle to radian (needed for sin function)
-
-      //calculate sin of angle as number between 0 and 255
-      int sinOut = constrain((sin(rad) * 128) + 128, 0, 255);
-
-      analogWrite(fadePin, sinOut);
-    //////////////////////////////
-  
   }else{
-    analogWrite(fadePin, 0);
+    heatVoltCap = 0;
+    int logVal = HIGH; // HIGH = ON , LOW == OFF
+    digitalWrite(HEATPIN, logVal); // turn on cartidge heater
+
+    // if(Serial.availableForWrite()){
+      // Serial.print("HEAT ON,"); 
+      // if(logVal == HIGH){
+      //   Serial.println("HIGH");
+      // }else if (logVal == LOW) {
+      //   Serial.println("LOW");
+      // }
+      
+      Serial.print("Temp1:");
+      Serial.print(temp1);
+      Serial.print(" , ");
+      Serial.print("Temp2:");
+      Serial.print(temp2);
+      Serial.print(" , ");
+      Serial.print("Average_temp(C):");
+      Serial.println((temp1+temp2)/2);
+      // Serial.println(digitalRead(HEATPIN));
+      // Serial.println(analogRead(HEATPIN));
+    // }  
   }
 
-  // Data Transfer to Master Arduino
-  // char text[5] = "hi"; //String(avgTemp);
-  // char text = avgTemp;
-
-  // delay(500);
-  // if (Serial.availableForWrite()){
-  //   Serial.write(8);
-  //   Serial.write(text);
-  // }
-  // byte data[] = {avgTemp};
-  // Wire.beginTransmission(5); // transmit to device #5 (pin A5)
-  // Wire.write(data, sizeof(data));        // sends five bytes
-  // Wire.endTransmission();    // stop transmitting
   delay(1000);
   ///
 }
