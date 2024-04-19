@@ -40,12 +40,12 @@ int x;
 
 void moveStepper() {
   // CONTROL STEPPER MOTOR
-  for (int x = 0; x < 680; x++) {  //this loop dictates the distance it travels (or maybe the time that it travels??)
+  for (int x = 0; x < 1000; x++) {  //this loop dictates the distance it travels (or maybe the time that it travels??)
     digitalWrite(DCPIN, LOW);  //pulse (move) the motor
-    delayMicroseconds(100);    //wait (pause) for 100 microseconds (the shorter the pause the )
+    delayMicroseconds(150);    //wait (pause) for 100 microseconds (the shorter the pause the )
 
     digitalWrite(DCPIN, HIGH);  //stop the motor
-    delayMicroseconds(100);     //wait (pause) for 100 microseconds
+    delayMicroseconds(150);     //wait (pause) for 100 microseconds
   }
   delayMicroseconds(100);
 }
@@ -55,11 +55,9 @@ char mystr[10]; //Initialized variable to store recieved data
 void setup() {
 
   // recive data from arduino writer
-  Serial1.begin(9600);
-  delay(500);
+  Serial1.begin(115200);
+  Serial.begin(115200);
 
-  Serial.begin(9600);
-  Serial.flush();
   // initialize the sensor
   while (NO_ERR != sensor1.begin()) {
     Serial.println("Communication with device failed, please check connection");
@@ -141,6 +139,13 @@ void loop() {
     // Serial.println(check1);
     // Serial.println(check2);
     if (check1 >= 5) {                                        // Only adjusts the fan speed if the entering temperature difference is larger than 5 percent
+
+    // Check if there is any incoming data
+      if (Serial1.available() > 0 ) {
+        // Read the incoming data and print it to the serial monitor
+        // 
+        
+      }
       float ambientTemp = (ambientTemp1 + ambientTemp2) / 2;  // + temp) / 3;
       Serial.print("Ambient_Temp(c):");
       Serial.print(ambientTemp);
@@ -156,17 +161,9 @@ void loop() {
       int newFanSpeed = int(round(val));
       Serial.print("FanSpeed(ft^3/min):");
       if(newFanSpeed < 1){
-        Serial.print(0);
+        Serial.println(0);
       }else{
-        Serial.print(val);
-      }
-      if(Serial.available()){
-        delay(500);
-        Serial.readBytes(mystr,5); //Read the serial data and store in var
-        Serial.println(mystr); //Print data on Serial Monitor
-        delay(500);
-      }else{
-        Serial.println("");
+        Serial.println(val);
       }
       float check3 = ((fanSpeed + newFanSpeed) / 2.0) * 100;
       if (check3 >= 5) {  // Only adjusts the fan speed if the fan speed difference is larger than 5 percent
@@ -228,15 +225,7 @@ void loop() {
     }
   }
 
-  // Check if there is any incoming data
-  if (Serial1.available() > 0) {
-    // Read the incoming data and print it to the serial monitor
-    String incomingData = Serial1.readString();
-    Serial.println(incomingData);
-    Serial.println("incomingData");
-  }else {
-    Serial.println("n/aaa");
-  }
+  
 
   // CONTROL AUGUR MOTOR
   moveStepper();
